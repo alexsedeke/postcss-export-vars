@@ -11,7 +11,7 @@ All suggestions are welcome!
 [ci]:      https://travis-ci.org/nahody/postcss-export-vars
 
 ## Options
-All Options are free.
+All options are mandatory.
 
 **file**
 Export file name. Extension is not required and will be set automatically.
