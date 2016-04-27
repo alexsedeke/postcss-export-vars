@@ -16,7 +16,7 @@ var fs      = require('fs');
  * @type {Plugin<T>}
  */
 module.exports = postcss.plugin('postcss-export-vars', function (options) {
-    var _variablesToExport = [];
+    var _variableCollection = {};
 
     options = options || {};
 
@@ -34,23 +34,17 @@ module.exports = postcss.plugin('postcss-export-vars', function (options) {
          */
         switch (options.type) {
         case 'js':
-            _variablesToExport.forEach(function (variable) {
-                fileContent += `const ${variable.property} = '${variable.value}';`;
-                fileContent += '\n';
-            });
+            fileContent += `'use strict';` + '\n';
+            for (let collectionKey in _variableCollection) {
+                fileContent += `const ${collectionKey} = '${_variableCollection[collectionKey]}';` + '\n';
+            }
 
             if (_.endsWith(options.file, 'js') === false) options.file += '.js';
 
             break;
         default:
             /* json */
-            let toObject = {};
-
-            _variablesToExport.forEach(function (variable) {
-                toObject[variable.property] = variable.value;
-            });
-
-            fileContent = JSON.stringify(toObject);
+            fileContent = JSON.stringify(_variableCollection);
 
             if (_.endsWith(options.file, 'json') === false) options.file += '.json';
         }
@@ -78,16 +72,84 @@ module.exports = postcss.plugin('postcss-export-vars', function (options) {
     }
 
     /**
+     * Extract custom properties and sass like variables from value.
+     * Return each found variable as array with objects.
+     *
+     * @example 'test vars(--var1) + $width'
+     *          result in array with objects:
+     *          [{origin:'vars(--var1)', variable: '--var1'},{origin:'$width', variable: 'width'}]
+     * @param value
+     * @returns {Array}
+     */
+    function extractVariables(value) {
+        let regex = [/var\((.*?)\)/g, /\$([a-zA-Z0-9_\-]*)/g ],
+            result = [],
+            matchResult;
+
+        regex.forEach(expression => {
+            while (matchResult = expression.exec(value)) {
+                result.push({ origin: matchResult[0], variable: matchResult[1] });
+            }
+        });
+
+        return result;
+    }
+
+    /**
+     * Resolve references on variable values to other variables.
+     */
+    function resolveReferences() {
+
+        for (let key in _variableCollection) {
+
+            let referenceVariables = extractVariables(_variableCollection[key]);
+
+            for (let current = 0; current < referenceVariables.length; current++) {
+                if (_.isEmpty(_variableCollection[_.camelCase(referenceVariables[current].variable)]) === false) {
+                    _variableCollection[key] = _variableCollection[key].replace(referenceVariables[current].origin, _variableCollection[_.camelCase(referenceVariables[current].variable)]);
+                }
+            }
+        }
+    }
+
+    /**
+     * Escape values depends on type.
+     *
+     * For JS escape single quote, for json double quotes.
+     * For everything else return origin value.
+     *
+     * @param value {string}
+     * @returns {string}
+     */
+    function escapeValue(value) {
+        switch (options.type) {
+        case 'js':
+            return value.replace(/'/g, '\\\'');
+        case 'json':
+            return value.replace(/"/g, '\\"');
+        default:
+            return value;
+        }
+    }
+
+    /**
      * Plugin return
+     *
+     * @returns {function}
      */
     return function (css) {
 
         css.walkDecls(decl => {
             if ((decl.prop.match(/^--/) || decl.prop.match(/^\$/)) &&
                 (_.isEmpty(options.match) || propertyMatch(decl.prop)) ) {
-                _variablesToExport.push({ property: _.camelCase(decl.prop), value: decl.value });
+                _variableCollection[_.camelCase(decl.prop)] = escapeValue(decl.value);
             }
         });
+
+        /*
+         * Resolve references on variable values
+         */
+        resolveReferences();
 
         createFile();
     };

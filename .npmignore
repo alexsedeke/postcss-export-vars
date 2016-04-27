@@ -1,4 +1,6 @@
 .gitignore
+.idea
+postcss_vars*
 
 node_modules/
 npm-debug.log

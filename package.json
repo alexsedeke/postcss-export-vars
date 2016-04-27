@@ -34,7 +34,9 @@
     "extends": "eslint-config-postcss/es5",
     "rules": {
       "max-len": "off",
-      "no-unused-vars": "off"
+      "no-unused-vars": "off",
+      "no-cond-assign": "off",
+      "quotes": "off"
     }
   }
 }
