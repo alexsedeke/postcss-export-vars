@@ -1,6 +1,6 @@
 {
   "name": "postcss-export-vars",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "PostCSS plugin to export variables as JS constants or JSON.",
   "keywords": [
     "postcss",
