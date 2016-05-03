@@ -1,7 +1,8 @@
 # PostCSS Export Vars [![Build Status][ci-img]][ci]
 
 [PostCSS] plugin to export variables definitions as JSON or JS constants.
-It detect "custom variables" and SASS style variables.
+It detect "custom variables" and SASS style variables and export them to JSON or JS file.    
+Variable that will refer to other variables are also dissolved and only the value is adopted.
 
 This plugin was created for a project, witch should use defined css colors also for highcharts.
 All suggestions are welcome!
@@ -39,6 +40,7 @@ When option is missing or an empty array, all properties / variables are taken.
 :root {
     --var-color1: rgb(255, 255, 200);
     --var-padding: 10px;
+    --var-padding-sub: var(--var-padding);
 }
 
 $var-color2: rgb(30, 100, 255);
@@ -50,6 +52,7 @@ $var-margin: 20px;
 {
 	  "varColor1": "rgb(255, 255, 200)",
 	  "varPadding": "10px",
+	  "varPadding-sub": "10px",
 	  "varColor2": "rgb(30, 100, 255)",
 	  "varMargin": "20px"
 }
@@ -59,6 +62,7 @@ $var-margin: 20px;
 ```JS
 const varColor1 = 'rgb(255, 255, 200)';
 const varPadding = '10px';
+const varPadding-sub = '10px';
 const varColor2 = 'rgb(30, 100, 255)';
 const varMargin = '20px';
 ```
